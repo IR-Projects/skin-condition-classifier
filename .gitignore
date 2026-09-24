@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Model files (tracked by MLflow, not Git)
+*.pt
