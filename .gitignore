@@ -222,3 +222,8 @@ __marimo__/
 mlflow.db
 mlruns/Untitled*.ipynb
 .ipynb_checkpoints/
+data/manifest.csv
+data/manifest_deduped.csv
+data/splits/
+data/manifest.csv
+data/manifest_deduped.csv
