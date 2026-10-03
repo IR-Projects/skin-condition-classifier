@@ -39,7 +39,7 @@ REPORT_OUT = os.path.join(DATA_DIR, "duplicate_groups.json")
 #   0 = only exact hash matches
 #   5 = catches resized/recompressed copies (recommended)
 #  10 = aggressive, may over-merge similar-looking distinct images
-THRESHOLD = 5
+THRESHOLD = 2
 
 # Which source to prefer when a group spans multiple datasets.
 # Higher = more likely to be kept as the "representative".
@@ -99,10 +99,14 @@ def find_near_duplicate_pairs(hash_hex_list, threshold):
             # [chunk, 1, 64] != [1, chunk, 64] -> [chunk, chunk, 64]
             block = bits[i:i + chunk, None, :] != bits[None, j:j + chunk, :]
             dists = block.sum(axis=2)
-            # Only upper triangle for i==j blocks
+            
             if i == j:
-                dists = np.triu(dists, k=1)
-            ys, xs = np.where(dists <= threshold)
+                # For diagonal blocks: only consider strict upper triangle.
+                # Use a mask — do NOT zero dists, or zeros become false matches.
+                upper = np.triu(np.ones_like(dists, dtype=bool), k=1)
+                ys, xs = np.where((dists <= threshold) & upper)
+            else:
+                ys, xs = np.where(dists <= threshold)
             for y, x in zip(ys, xs):
                 pairs.append((i + y, j + x))
     return pairs
