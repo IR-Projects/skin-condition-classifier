@@ -219,3 +219,5 @@ __marimo__/
 
 # Model files (tracked by MLflow, not Git)
 *.pt
+mlflow.db
+mlruns/
