@@ -1,0 +1,16 @@
+{
+  "source": "SkinDisNet (Mendeley)",
+  "scope_decision": "only Eczema included; Tinea Corporis, Atopic Dermatitis, Contact Dermatitis, Scabies, and Seborrheic Dermatitis excluded",
+  "added": {
+    "eczema": 466
+  },
+  "skipped": {
+    "Contact Dermatitis": 477,
+    "Scabies": 343,
+    "Tinea Corporis": 275,
+    "Seborrheic Dermatitis": 79,
+    "Atopic Dermatitis": 70
+  },
+  "note_on_naming": "SkinDisNet 'Seborrheic Dermatitis' is a distinct condition from HAM10000 'seborrheic_keratosis' and was NOT merged.",
+  "note_on_tinea": "Tinea Corporis is listed as skipped here, but it was also dropped from the target class list entirely due to insufficient total images (316 combined)."
+}
