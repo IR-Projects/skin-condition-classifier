@@ -41,3 +41,32 @@ def get_eval_transforms(img_size=224):
         transforms.ToTensor(),
         transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
     ])
+
+
+def get_train_transforms_aggressive(img_size=224):
+    """
+    Train transforms with a more aggressive crop, for classes whose
+    source images tend to be wide shots (whole limbs, torso) rather
+    than tight lesion close-ups.
+
+    Currently used for vitiligo: images from SkinDiseaseBD and
+    SkinDiseaseClassification often show the full arm or leg, with the
+    depigmented patches occupying only a small fraction of the frame.
+
+    Standard scale=(0.8, 1.0) keeps too much normal-skin context, so the
+    model risks learning background ("wide shot") rather than the actual
+    depigmentation signal. scale=(0.5, 1.0) forces crops down to 50% of
+    the original, zooming into lesion regions more often.
+    """
+    return transforms.Compose([
+        transforms.Resize(int(img_size * 1.14)),
+        transforms.RandomResizedCrop(img_size, scale=(0.5, 1.0)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomVerticalFlip(p=0.5),
+        transforms.RandomRotation(degrees=20),
+        transforms.ColorJitter(
+            brightness=0.15, contrast=0.15, saturation=0.15, hue=0.03,
+        ),
+        transforms.ToTensor(),
+        transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+    ])
