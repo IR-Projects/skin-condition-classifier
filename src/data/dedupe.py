@@ -23,7 +23,6 @@ import os
 import json
 import time
 from multiprocessing import Pool
-from collections import defaultdict
 
 import numpy as np
 import pandas as pd
