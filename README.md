@@ -39,7 +39,37 @@ Datasets are **not** stored in Git. They are versioned with DVC, and only the sm
 
 ## Setup
 
-Setup instructions will be added once the environment is finalized.
+Requires Python 3.12.
+
+1. Create and activate a virtual environment:
+```
+   python -m venv .venv
+   .venv\Scripts\activate
+```
+2. Install dependencies: `pip install -r requirements.txt`
+3. Run lint and tests: `ruff check .` and `pytest`
+
+## Run the API (local)
+
+```
+uvicorn api.main:app --reload
+```
+
+Open http://127.0.0.1:8000/docs for the interactive docs.
+
+- `GET /health`: service status
+- `POST /predict`: upload an image file, returns the predicted class, confidence and per-class probabilities
+
+The API currently uses a dummy model (random probabilities). The real checkpoint is wired in during Week 4. Results are not a medical diagnosis.
+
+## Docker
+
+```
+docker build -t skin-api .
+docker run -p 8000:8000 skin-api
+```
+
+Then open http://localhost:8000/docs.
 
 ## MLflow experiment tracking
 
