@@ -227,3 +227,4 @@ data/manifest_deduped.csv
 data/splits/
 data/manifest.csv
 data/manifest_deduped.csv
+mlruns/
