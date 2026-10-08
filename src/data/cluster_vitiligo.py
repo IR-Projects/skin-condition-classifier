@@ -15,7 +15,6 @@ Run:
     python src/data/cluster_vitiligo.py
 """
 import os
-import json
 from multiprocessing import Pool
 
 import pandas as pd
@@ -96,7 +95,7 @@ def main():
 
     # Cluster size distribution
     sizes = hashable.groupby("cluster").size()
-    print(f"\nCluster sizes:")
+    print("\nCluster sizes:")
     print(f"  singletons: {(sizes == 1).sum()}")
     print(f"  clusters >1: {(sizes > 1).sum()}")
     print(f"  largest cluster: {sizes.max()}")

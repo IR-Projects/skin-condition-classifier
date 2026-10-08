@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image
 
 from transforms import get_train_transforms, get_train_transforms_aggressive
-from dataset import SkinLesionDataset, CLASS_TO_IDX
+from dataset import SkinLesionDataset
 
 SPLITS = r"C:\Users\TOSHIBA\Desktop\skin_Conditions_AI\data\splits"
 CSV = os.path.join(SPLITS, "train.csv")
