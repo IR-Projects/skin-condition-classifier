@@ -1,4 +1,3 @@
-@'
 # Skin Condition Classifier
 
 A multi-class skin condition image classifier built with transfer learning in PyTorch and deployed through an MLOps pipeline (data versioning, experiment tracking, containerized serving, CI/CD, and monitoring). MLOps class project.
@@ -94,4 +93,4 @@ Never commit tokens or put them in code. Without these variables, tracking falls
 - Suggested run names: `efficientnet_b0-seed42`, `resnet50-seed42`
 
 Smoke test of the setup: `python -m scripts.log_dummy_run`
-'@ | Out-File -Encoding utf8 README.md
+
