@@ -1,9 +1,10 @@
 import torch
+
 from src.model import build_model
 
 
 def test_model_output_shape():
-    model = build_model(num_classes=7)
+    model = build_model(num_classes=8)
     x = torch.randn(2, 3, 224, 224)
     output = model(x)
-    assert tuple(output.shape) == (2, 7)
+    assert tuple(output.shape) == (2, 8)
