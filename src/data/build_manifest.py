@@ -15,6 +15,13 @@ import glob
 import pandas as pd
 
 BASE = r"C:\Users\TOSHIBA\Desktop\skin_Conditions_AI\data\raw"
+
+PROJECT_ROOT = r"C:\Users\TOSHIBA\Desktop\skin_Conditions_AI"
+
+def rel(p):
+    """Return path relative to project root, so splits work on any machine."""
+    return os.path.relpath(p, PROJECT_ROOT)
+
 OUT_DIR = r"C:\Users\TOSHIBA\Desktop\skin_Conditions_AI\data"
 
 IMG_EXTS = (".jpg", ".jpeg", ".png", ".bmp", ".webp")
@@ -54,12 +61,12 @@ for class_name in os.listdir(isic_path):
         stem = os.path.splitext(os.path.basename(fpath))[0]
         lesion_id = lesion_map.get(stem, lesion_map.get(os.path.basename(fpath)))
         rows.append({
-            "path": fpath,
+            "path": rel(fpath),
             "class": class_name,
             "source": "ISIC",
             "patient_id": None,
             "lesion_id": lesion_id,
-            "group_id": lesion_id if lesion_id else fpath,
+            "group_id": lesion_id if lesion_id else rel(fpath),
         })
 
 # ---------------- HAM10000 ----------------
@@ -87,9 +94,9 @@ for _, r in ham_meta.iterrows():
     elif pd.notna(lesion):
         group = f"ham_les_{lesion}"
     else:
-        group = fpath
+        group = rel(fpath)
     rows.append({
-        "path": fpath,
+        "path": rel(fpath),
         "class": cls,
         "source": "HAM10000",
         "patient_id": str(pid) if pd.notna(pid) else None,
@@ -101,8 +108,8 @@ for _, r in ham_meta.iterrows():
 for grade in ["acne0_1024", "acne1_1024", "acne2_1024", "acne3_1024"]:
     for fpath in list_images(os.path.join(BASE, "acne04", grade)):
         rows.append({
-            "path": fpath, "class": "acne", "source": "ACNE04",
-            "patient_id": None, "lesion_id": None, "group_id": fpath,
+            "path": rel(fpath), "class": "acne", "source": "ACNE04",
+            "patient_id": None, "lesion_id": None, "group_id": rel(fpath),
         })
 
 # ---------------- Skin Disease Classification Dataset ----------------
@@ -112,8 +119,8 @@ for sub, cls in [("acne", "acne"),
                  ("Nail_psoriasis", "nail_psoriasis")]:
     for fpath in list_images(os.path.join(sdc, sub)):
         rows.append({
-            "path": fpath, "class": cls, "source": "SkinDiseaseClassification",
-            "patient_id": None, "lesion_id": None, "group_id": fpath,
+            "path": rel(fpath), "class": cls, "source": "SkinDiseaseClassification",
+            "patient_id": None, "lesion_id": None, "group_id": rel(fpath),
         })
 
 # ---------------- DermNet (eczema only) ----------------
@@ -121,8 +128,8 @@ for split in ["train", "test"]:
     folder = os.path.join(BASE, "dermnet", split, "Eczema Photos")
     for fpath in list_images(folder):
         rows.append({
-            "path": fpath, "class": "eczema", "source": "DermNet",
-            "patient_id": None, "lesion_id": None, "group_id": fpath,
+            "path": rel(fpath), "class": "eczema", "source": "DermNet",
+            "patient_id": None, "lesion_id": None, "group_id": rel(fpath),
         })
 
 # ---------------- SkinDisNet (eczema only, patient-level) ----------------
@@ -151,7 +158,7 @@ if sdn_dirs:
                     m = ec[ec["Image_id"] == stem]
                     pid = m.iloc[0]["Patient_id"] if not m.empty else None
                     rows.append({
-                        "path": fpath, "class": "eczema", "source": "SkinDisNet",
+                        "path": rel(fpath), "class": "eczema", "source": "SkinDisNet",
                         "patient_id": pid, "lesion_id": None,
                         "group_id": f"sdn_{pid}" if pid else fpath,
                     })
@@ -164,8 +171,8 @@ sdbd = os.path.join(
 )
 for fpath in list_images(os.path.join(sdbd, "Vitiligo")):
     rows.append({
-        "path": fpath, "class": "vitiligo", "source": "SkinDiseaseBD",
-        "patient_id": None, "lesion_id": None, "group_id": fpath,
+        "path": rel(fpath), "class": "vitiligo", "source": "SkinDiseaseBD",
+        "patient_id": None, "lesion_id": None, "group_id": rel(fpath),
     })
 
 manifest = pd.DataFrame(rows)

@@ -25,6 +25,24 @@ class SkinLesionDataset(Dataset):
     def __init__(self, csv_path, transform=None, transform_overrides=None, return_path=False):
         # this reads the split CSV and loads it into a DataFrame
         self.df = pd.read_csv(csv_path).reset_index(drop=True)
+
+        # Resolve relative paths against project root; strip foreign roots
+        # from absolute paths (in case a stale CSV from another machine loads).
+        PROJECT_ROOT = r"C:\Users\TOSHIBA\Desktop\skin_Conditions_AI"
+
+        def _resolve(p):
+            if os.path.isabs(p):
+                # e.g. C:\Users\TOSHIBA\...\data\raw\isic_archive\x.jpg
+                # → find the "data" segment and re-root at PROJECT_ROOT
+                norm = p.replace("\\", "/")
+                if "/data/" in norm:
+                    tail = norm.split("/data/", 1)[1]
+                    return os.path.join(PROJECT_ROOT, "data", tail)
+                return p  # can't recover, leave as-is
+            return os.path.join(PROJECT_ROOT, p)
+
+        self.df["path"] = self.df["path"].apply(_resolve)
+        
         # store the transform
         self.transform = transform
         # Dict mapping class name -> transform, for classes that need
