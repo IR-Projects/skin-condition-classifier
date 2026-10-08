@@ -1,5 +1,5 @@
+# Alphabetical order, confirmed with Person A.
 # Order must match the label indices used in training.
-# Alphabetical for now, confirm with Person A.
 CLASS_NAMES = [
     "acne",
     "bcc",
