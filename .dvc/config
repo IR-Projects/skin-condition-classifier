@@ -2,3 +2,4 @@
     remote = hf
 ['remote "hf"']
     url = s3://skin-conditions-data
+    endpointurl = https://s3.hf.co/Raniabo

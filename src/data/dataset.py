@@ -3,6 +3,21 @@ import pandas as pd
 from torch.utils.data import Dataset
 from PIL import Image
 
+def _normalize_path(p: str) -> str:
+    """Strip any absolute prefix and return a repo-relative path.
+
+    Handles Windows absolute paths like:
+      C:\\Users\\TOSHIBAL\\Desktop\\skin_Conditions_AI\\data\\raw\\...
+    by finding 'data/raw/' and keeping everything from there.
+    Also normalizes backslashes to forward slashes.
+    """
+    p = str(p).replace("\\", "/")
+    marker = "data/raw/"
+    idx = p.find(marker)
+    if idx != -1:
+        return p[idx:]
+    return p
+
 # sorted alphabetically for easier indexing and consistency across files
 # to avoid mistakes in the confusion matrix
 CLASS_NAMES = [
@@ -64,7 +79,7 @@ class SkinLesionDataset(Dataset):
         # returns the image and label at the specified index.
         # If return_path is True, it also returns the absolute image path.
         row = self.df.iloc[idx]
-        path = row["path"]
+        path = _normalize_path(row["path"])
         # convert the class string to an integer
         label = CLASS_TO_IDX[row["class"]]
 
