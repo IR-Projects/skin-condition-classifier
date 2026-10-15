@@ -187,3 +187,6 @@ mlruns/
 src/data/*.png
 src/data/dataset_sanity_check*.png
 src/data/vitiligo_crop_comparison.png
+.dvc/config.local
+kaggle.json
+checkpoints/
