@@ -1,4 +1,4 @@
 [core]
-    remote = gdrive
-['remote "gdrive"']
-    url = gdrive://16V9AXSNQgJEOm4SPTdmORwt5uNp-xTHF
+    remote = hf
+['remote "hf"']
+    url = s3://skin-conditions-data
