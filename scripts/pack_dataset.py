@@ -95,8 +95,8 @@ def main():
     # The row number in the name keeps files from different datasets apart
     # even when their original filenames collide.
     arc_names = [
-        f"{safe(s)}/{safe(l)}/{i:06d}_{safe(Path(str(p)).stem)}.jpg"
-        for i, (s, l, p) in enumerate(zip(df[args.split_col], df[args.label_col], df[args.path_col]))
+                f"{safe(split)}/{safe(label)}/{i:06d}_{safe(Path(str(p)).stem)}.jpg"
+        for i, (split, label, p) in enumerate(zip(df[args.split_col], df[args.label_col], df[args.path_col]))
     ]
 
     out = Path(args.out)
