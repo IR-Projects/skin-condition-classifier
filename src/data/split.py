@@ -14,7 +14,7 @@ import os
 import numpy as np
 import pandas as pd
 
-DATA_DIR = r"C:\Users\TOSHIBA\Desktop\skin_Conditions_AI\data"
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data")
 MANIFEST = os.path.join(DATA_DIR, "manifest_deduped.csv")
 OUT_DIR = os.path.join(DATA_DIR, "splits")
 
@@ -55,6 +55,15 @@ def main():
     print(f"Loading manifest: {MANIFEST}")
     df = pd.read_csv(MANIFEST)
     print(f"Total rows: {len(df)}")
+
+    # ISIC and HAM10000 share image IDs: put the same image in the same group.
+    df["_stem"] = (df["path"].str.replace("\\", "/", regex=False)
+                   .str.split("/").str[-1].str.rsplit(".", n=1).str[0])
+    ham = df[df["source"] == "HAM10000"]
+    ham_map = dict(zip(ham["_stem"], ham["group_id"]))
+    isic = df["source"] == "ISIC"
+    df.loc[isic, "group_id"] = df.loc[isic, "_stem"].map(ham_map).fillna(df.loc[isic, "group_id"])
+    df = df.drop(columns="_stem")
 
     df = grouped_stratified_split(df, "class", "group_id", RATIOS, SEED)
 

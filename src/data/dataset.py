@@ -1,22 +1,12 @@
 import os
+from pathlib import Path
+
 import pandas as pd
 from torch.utils.data import Dataset
 from PIL import Image
 
-def _normalize_path(p: str) -> str:
-    """Strip any absolute prefix and return a repo-relative path.
-
-    Handles Windows absolute paths like:
-      C:\\Users\\TOSHIBAL\\Desktop\\skin_Conditions_AI\\data\\raw\\...
-    by finding 'data/raw/' and keeping everything from there.
-    Also normalizes backslashes to forward slashes.
-    """
-    p = str(p).replace("\\", "/")
-    marker = "data/raw/"
-    idx = p.find(marker)
-    if idx != -1:
-        return p[idx:]
-    return p
+# repo root = two folders above this file (src/data/dataset.py)
+REPO_ROOT = str(Path(__file__).resolve().parents[2])
 
 # sorted alphabetically for easier indexing and consistency across files
 # to avoid mistakes in the confusion matrix
@@ -37,27 +27,14 @@ IDX_TO_CLASS = {i: name for name, i in CLASS_TO_IDX.items()}
 
 
 class SkinLesionDataset(Dataset):
-    def __init__(self, csv_path, transform=None, transform_overrides=None, return_path=False):
+    def __init__(self, csv_path, transform=None, transform_overrides=None,
+                 return_path=False, root=None):
+        # folder that the CSV paths are relative to (default: the repo root)
+        self.root = root or REPO_ROOT
+
         # this reads the split CSV and loads it into a DataFrame
         self.df = pd.read_csv(csv_path).reset_index(drop=True)
 
-        # Resolve relative paths against project root; strip foreign roots
-        # from absolute paths (in case a stale CSV from another machine loads).
-        PROJECT_ROOT = r"C:\Users\TOSHIBA\Desktop\skin_Conditions_AI"
-
-        def _resolve(p):
-            if os.path.isabs(p):
-                # e.g. C:\Users\TOSHIBA\...\data\raw\isic_archive\x.jpg
-                # → find the "data" segment and re-root at PROJECT_ROOT
-                norm = p.replace("\\", "/")
-                if "/data/" in norm:
-                    tail = norm.split("/data/", 1)[1]
-                    return os.path.join(PROJECT_ROOT, "data", tail)
-                return p  # can't recover, leave as-is
-            return os.path.join(PROJECT_ROOT, p)
-
-        self.df["path"] = self.df["path"].apply(_resolve)
-        
         # store the transform
         self.transform = transform
         # Dict mapping class name -> transform, for classes that need
@@ -77,9 +54,10 @@ class SkinLesionDataset(Dataset):
 
     def __getitem__(self, idx):
         # returns the image and label at the specified index.
-        # If return_path is True, it also returns the absolute image path.
+        # If return_path is True, it also returns the image path.
         row = self.df.iloc[idx]
-        path = _normalize_path(row["path"])
+        # CSV paths may use Windows backslashes; make them work on any OS
+        path = os.path.join(self.root, str(row["path"]).replace("\\", "/"))
         # convert the class string to an integer
         label = CLASS_TO_IDX[row["class"]]
 
@@ -120,7 +98,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
 
-    SPLITS = r"C:\Users\TOSHIBA\Desktop\skin_Conditions_AI\data\splits"
+    SPLITS = os.path.join(REPO_ROOT, "data", "splits")
     train_csv = os.path.join(SPLITS, "train.csv")
 
     tf = get_eval_transforms(224)
