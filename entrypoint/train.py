@@ -16,6 +16,9 @@ import torch
 import torch.nn as nn
 from sklearn.metrics import f1_score, recall_score
 from torch.utils.data import DataLoader
+import random
+import subprocess
+
 
 # Make src/ importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -90,11 +93,17 @@ def evaluate(model, loader, criterion, device):
                            labels=list(range(len(CLASS_NAMES))), zero_division=0)
     return total_loss / max(n, 1), acc, macro_f1, recalls
 
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 def main():
     args = parse_args()
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
+    set_seed(args.seed)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Device: {device}")
@@ -133,6 +142,19 @@ def main():
     import mlflow
     init_tracking()
     mlflow.start_run(run_name=f"{args.backbone}-seed{args.seed}")
+
+    def _run(cmd):
+        try:
+            return subprocess.check_output(cmd, text=True).strip()
+        except Exception:
+            return "unknown"
+        
+    mlflow.set_tags({
+        "git_commit": _run(["git", "rev-parse", "--short", "HEAD"]),
+        "torch": torch.__version__,
+        "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu",
+    })
+    mlflow.log_text(_run([sys.executable, "-m", "pip", "freeze"]), "pip_freeze.txt")
     mlflow.log_params({
         "backbone": args.backbone, "epochs": args.epochs,
         "batch_size": args.batch_size, "lr": args.lr, "optimizer": "adamw",
