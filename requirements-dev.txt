@@ -1,0 +1,13 @@
+-r requirements-prod.txt
+pytest
+ruff
+pandas
+matplotlib
+seaborn
+scikit-learn
+tqdm
+imagehash
+mlflow
+dvc[s3]
+kaggle
+isic-cli
