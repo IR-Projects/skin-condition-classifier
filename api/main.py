@@ -2,11 +2,15 @@ import io
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from PIL import Image
+from prometheus_client import make_asgi_app
 
 from api.model_loader import MODEL_NAME, predict
 from src.classes import CLASS_NAMES
 
 app = FastAPI(title="Skin Condition Classifier")
+# Prometheus metrikleri için /metrics endpoint'ini bağla
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
 # Maksimum dosya boyutu: 5 MB
 MAX_FILE_SIZE = 5 * 1024 * 1024  
