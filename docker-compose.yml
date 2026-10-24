@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: skin-api:latest
+    container_name: skin-api-container
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bilgisayarındaki models klasörünü konteynerin içine bağlar
+      - ./models:/app/models
+    environment:
+      # Gerçek modelin yolunu ortam değişkeni olarak verir
+      - MODEL_PATH=models/efficientnet_b0_best.pt
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
