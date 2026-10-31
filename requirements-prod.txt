@@ -3,9 +3,8 @@ fastapi==0.142.2
 uvicorn==0.54.0
 python-multipart==0.0.32
 pillow==12.3.0
-httpx==0.28.1
 pydantic==2.10.6
 pydantic-core==2.27.2
-torch
-torchvision
-prometheus-client
+torch==2.14.0
+torchvision==0.29.0
+prometheus-client==0.26.0

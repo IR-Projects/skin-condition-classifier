@@ -8,15 +8,11 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Bilgisayarındaki models klasörünü konteynerin içine bağlar
-      - ./models:/app/models
+      # Host ./models folder (not in git) mounted read-only into the container
+      - ./models:/app/models:ro
     environment:
-      # Gerçek modelin yolunu ortam değişkeni olarak verir
-      - MODEL_PATH=models/efficientnet_b0_best.pt
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      # Real checkpoint path inside the container. Remove this line to run in dummy mode.
+      - MODEL_PATH=/app/models/efficientnet_b0_best.pt
+    # If the checkpoint is missing or broken the app exits; retry a few times, then stop.
+    restart: on-failure:3
+    # The health check is defined in the Dockerfile (HEALTHCHECK).

@@ -11,3 +11,4 @@ mlflow
 dvc[s3]
 kaggle
 isic-cli
+httpx==0.28.1
