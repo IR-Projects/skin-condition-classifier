@@ -1,3 +1,16 @@
+"""Model loading and inference for the API.
+
+Modes
+-----
+dummy: MODEL_PATH is not set (CI, local smoke tests). Returns random probabilities.
+real:  MODEL_PATH points to a checkpoint dict saved by entrypoint/train.py with the keys
+       state_dict, classes, backbone, img_size.
+
+If MODEL_PATH is set but the file is missing or cannot be loaded, loading fails loudly
+(the app does not start) instead of silently serving random predictions.
+"""
+
+import logging
 import os
 import random
 
@@ -6,66 +19,100 @@ import torch.nn.functional as F
 from PIL import Image
 
 from src.classes import CLASS_NAMES
-from src.model import build_model
 from src.data.transforms import get_eval_transforms
+from src.model import build_model
 
-# Varsayılan olarak dummy modda başla
-MODEL_NAME = "dummy"
-_model = None
-_transform = None
-_classes = CLASS_NAMES
+logger = logging.getLogger("skin_api.model")
 
-def _load_model():
-    global MODEL_NAME, _model, _transform, _classes
-    
-    # CI (GitHub Actions) testleri için: MODEL_PATH yoksa dummy modelde kal
+REQUIRED_KEYS = ("state_dict", "classes", "backbone", "img_size")
+
+
+def _dummy_state() -> dict:
+    return {
+        "mode": "dummy",
+        "model": None,
+        "transform": None,
+        "classes": list(CLASS_NAMES),
+        "backbone": "dummy",
+        "checkpoint": None,
+    }
+
+
+_state = _dummy_state()
+
+
+def use_dummy() -> None:
+    """Switch to dummy mode (random predictions)."""
+    global _state
+    _state = _dummy_state()
+
+
+def load_model(model_path: str) -> None:
+    """Load a real checkpoint. Raises on any problem, never falls back silently."""
+    global _state
+
+    if not os.path.isfile(model_path):
+        raise FileNotFoundError(f"Checkpoint not found: {model_path}")
+
+    # weights_only=True: only tensors and plain Python types are unpickled (safer).
+    checkpoint = torch.load(model_path, map_location="cpu", weights_only=True)
+
+    missing = [key for key in REQUIRED_KEYS if key not in checkpoint]
+    if missing:
+        raise KeyError(f"Checkpoint {model_path} is missing keys: {missing}")
+
+    classes = list(checkpoint["classes"])
+    backbone = checkpoint["backbone"]
+
+    model = build_model(backbone, len(classes), pretrained=False)
+    model.load_state_dict(checkpoint["state_dict"])
+    model.eval()
+
+    _state = {
+        "mode": "real",
+        "model": model,
+        "transform": get_eval_transforms(int(checkpoint["img_size"])),
+        "classes": classes,
+        "backbone": backbone,
+        "checkpoint": os.path.basename(model_path),
+    }
+    logger.warning("Loaded real model %s (%s, %d classes)", model_path, backbone, len(classes))
+
+
+def init_from_env() -> None:
+    """Read MODEL_PATH: set -> real model (must load), unset -> dummy mode."""
     model_path = os.environ.get("MODEL_PATH")
-    if not model_path or not os.path.exists(model_path):
-        print(f"WARNING: MODEL_PATH not set or file not found ({model_path}). Running in dummy mode.")
-        MODEL_NAME = "dummy"
-        return
+    if model_path:
+        load_model(model_path)
+    else:
+        logger.warning("MODEL_PATH is not set: running in DUMMY mode (random predictions).")
+        use_dummy()
 
-    try:
-        # Checkpoint'i CPU'ya yükle
-        checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
-        
-        # Checkpoint içinden bilgileri çıkar
-        backbone = checkpoint.get("backbone", "efficientnet_b0")
-        img_size = checkpoint.get("img_size", 224)
-        _classes = checkpoint.get("classes", CLASS_NAMES)
-        
-        # Modeli inşa et ve ağırlıkları yükle
-        _model = build_model(backbone=backbone, num_classes=len(_classes), pretrained=False)
-        _model.load_state_dict(checkpoint["state_dict"])
-        _model.eval() # Inference moduna al
-        
-        # Görüntü ön işleme (transform) hazırla
-        _transform = get_eval_transforms(img_size)
-        
-        MODEL_NAME = os.path.basename(model_path)
-        print(f"SUCCESS: Loaded real model from {model_path} ({backbone})")
-        
-    except Exception as e:
-        print(f"ERROR: Failed to load model from {model_path}. Error: {e}")
-        print("Falling back to dummy mode.")
-        MODEL_NAME = "dummy"
 
-# Modül import edildiğinde modeli yükle
-_load_model()
+def get_info() -> dict:
+    return {
+        "mode": _state["mode"],
+        "model": _state["backbone"],
+        "checkpoint": _state["checkpoint"],
+    }
+
+
+def get_classes() -> list[str]:
+    return list(_state["classes"])
+
 
 def predict(image: Image.Image) -> list[float]:
-    # Eğer gerçek model yüklenmediyse (dummy mod), eski rastgele davranışı göster
-    if MODEL_NAME == "dummy" or _model is None or _transform is None:
-        scores = [random.random() for _ in CLASS_NAMES]
+    state = _state  # read once, in case the state is swapped during the call
+
+    if state["mode"] == "dummy":
+        scores = [random.random() for _ in state["classes"]]
         total = sum(scores)
         return [score / total for score in scores]
 
-    # Gerçek model tahmini
-    img_tensor = _transform(image).unsqueeze(0)  # (3, 224, 224) -> (1, 3, 224, 224)
-    
+    tensor = state["transform"](image).unsqueeze(0)  # (3, H, W) -> (1, 3, H, W)
     with torch.no_grad():
-        outputs = _model(img_tensor)
-        # Çıktıları olasılıklara (softmax) çevir
-        probs = F.softmax(outputs, dim=1).squeeze(0)
-        
+        probs = F.softmax(state["model"](tensor), dim=1).squeeze(0)
     return probs.tolist()
+
+
+init_from_env()
